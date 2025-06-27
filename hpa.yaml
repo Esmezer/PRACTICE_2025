@@ -1,0 +1,25 @@
+    # hpa.yaml
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler # Тип ресурса: HorizontalPodAutoscaler
+
+    metadata:
+      name: drogon-api-hpa # Имя HPA
+      namespace: default # Пространство имен, где находится ваше приложение
+
+    spec:
+      scaleTargetRef: # Ссылка на ресурс, который мы хотим масштабировать
+        apiVersion: apps/v1
+        kind: Deployment
+        name: drogon-api-deployment # Имя вашего Deployment
+
+      minReplicas: 1 # Минимальное количество подов
+      maxReplicas: 5 # Максимальное количество подов
+
+      metrics: # Метрики, по которым будет происходить масштабирование
+      - type: Resource # Тип метрики: ресурс (CPU, память)
+        resource:
+          name: cpu # Имя ресурса: CPU
+          target:
+            type: Utilization # Тип цели: использование (процент от запрошенного CPU)
+            averageUtilization: 50 # Если среднее использование CPU превысит 50%, HPA добавит поды
+    

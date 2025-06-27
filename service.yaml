@@ -1,0 +1,19 @@
+# service.yaml
+apiVersion: v1 # Версия API для Service
+kind: Service # Тип ресурса: Service
+
+metadata:
+  name: drogon-api-service # Имя вашего сервиса
+  labels:
+    app: drogon-api # Метка для идентификации сервиса
+
+spec:
+  selector:
+    app: drogon-api # Выбираем поды с меткой app: drogon-api, к которым будет направляться трафик
+  ports:
+  - protocol: TCP
+    port: 80 # Порт, на котором сервис будет доступен внутри кластера
+    targetPort: 8080 # Порт контейнера, на который сервис будет перенаправлять трафик
+  type: NodePort # Тип сервиса:
+                 # NodePort открывает порт на каждой ноде кластера, что позволяет получить доступ извне.
+                 # Для продакшена часто используются LoadBalancer (в облаке) или Ingress.

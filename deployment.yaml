@@ -1,0 +1,26 @@
+# deployment.yaml
+apiVersion: apps/v1 # Версия API для Deployment
+kind: Deployment # Тип ресурса: Deployment
+
+metadata:
+  name: drogon-api-deployment # Имя вашего развертывания
+  labels:
+    app: drogon-api # Метка для идентификации приложения
+
+spec:
+  replicas: 1 # Количество подов (экземпляров приложения), которые Kubernetes должен поддерживать
+  selector:
+    matchLabels:
+      app: drogon-api # Выбираем поды с меткой app: drogon-api для этого развертывания
+  template: # Шаблон для создания подов
+    metadata:
+      labels:
+        app: drogon-api # Метка, которая будет применена к каждому поду
+    spec:
+      containers: # Определяем контейнеры, которые будут запущены в поде
+      - name: drogon-api-container # Имя контейнера
+        image: drogon-api-app:latest # Имя вашего Docker образа. Убедитесь, что вы собрали его локально!
+        imagePullPolicy: Never # Важно: Kubernetes не будет пытаться загрузить образ из Docker Hub.
+                                # Он будет искать его локально. Используйте "Always" для продакшена.
+        ports:
+        - containerPort: 8080 # Порт, который слушает ваше приложение внутри контейнера
