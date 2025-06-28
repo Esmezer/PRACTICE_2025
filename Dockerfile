@@ -119,20 +119,106 @@
 # CMD ["./myapp"]
 
 
-# Используем официальный образ Drogon с CMake и g++
-FROM drogonframework/drogon
+
+
+
+
+
+
+# # Используем официальный образ Drogon с CMake и g++
+# FROM drogonframework/drogon
+
+# # Установка рабочей директории
+# WORKDIR /app
+
+# # Копируем проект в контейнер
+# COPY . /app
+
+# # Собираем проект
+# RUN mkdir -p build && cd build && cmake .. && make
+
+# # Запуск
+# CMD ["./build/main"]
+
+
+
+# Используем базовый образ Ubuntu (можно использовать и другой, например, debian:stable-slim)
+FROM ubuntu:latest
+
+# Установка зависимостей, необходимых для сборки Drogon
+# build-essential: включает g++ и make
+# cmake: система сборки
+# libssl-dev: для HTTPS (OpenSSL)
+# uuid-dev: для генерации UUID
+# libjsoncpp-dev: для работы с JSON
+# libc-ares-dev: для асинхронного разрешения DNS
+# libsqlite3-dev: для поддержки SQLite3 (если используете ORM Drogon)
+# libz-dev, libbrotli-dev: для сжатия (gzip, brotli)
+RUN apt update && \
+    apt install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    libssl-dev \
+    uuid-dev \
+    libjsoncpp-dev \
+    libc-ares-dev \
+    libsqlite3-dev \
+    libz-dev \
+    libbrotli-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Установка рабочей директории
 WORKDIR /app
 
-# Копируем проект в контейнер
+# Копируем весь проект в контейнер, включая поддиректории drogon и googletest
 COPY . /app
 
-# Собираем проект
+# Собираем проект (который теперь включает сборку Drogon и Google Test)
+# Создаем директорию build, переходим в нее, конфигурируем CMake и собираем проект.
 RUN mkdir -p build && cd build && cmake .. && make
 
-# Запуск
+# Запуск вашего приложения
+# Убедитесь, что имя исполняемого файла соответствует тому, что вы определили в CMakeLists.txt (add_executable(main main.cpp))
 CMD ["./build/main"]
 
+# Открываем порт, который слушает ваше приложение Drogon
+EXPOSE 8080
 
 
+
+
+
+
+
+# # Используем базовый образ Ubuntu
+#     FROM ubuntu:latest
+
+#     # Установка зависимостей, необходимых для сборки Drogon
+#     RUN apt update && \
+#         apt install -y --no-install-recommends \
+#         build-essential \
+#         cmake \
+#         libssl-dev \
+#         uuid-dev \
+#         libjsoncpp-dev \
+#         libc-ares-dev \
+#         libsqlite3-dev \
+#         libz-dev \
+#         libbrotli-dev && \
+#         rm -rf /var/lib/apt/lists/*
+
+#     # Установка рабочей директории
+#     WORKDIR /app
+
+#     # Копируем весь проект в контейнер, включая поддиректории drogon и googletest
+#     COPY . /app
+
+#     # Собираем проект (который теперь включает сборку Drogon и Google Test)
+#     # Создаем директорию build, переходим в нее, конфигурируем CMake и собираем проект.
+#     RUN mkdir -p build && cd build && cmake .. && make
+
+#     # Запуск вашего приложения
+#     CMD ["./build/main"]
+
+#     # Открываем порт, который слушает ваше приложение Drogon
+#     EXPOSE 8080

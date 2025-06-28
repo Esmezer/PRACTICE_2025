@@ -1,0 +1,63 @@
+# .github/workflows/main.yaml
+
+# Имя вашего рабочего процесса GitHub Actions
+name: CI/CD для Drogon API App
+
+# Определяет события, которые запускают этот рабочий процесс
+on:
+  push:
+    # Запускать workflow при пуше (push) в ветку 'main'
+    branches:
+      - main
+  pull_request:
+    # Запускать workflow при создании Pull Request (запроса на слияние) в ветку 'main'
+    branches:
+      - main
+
+# Определяет задания (jobs), которые будут выполняться
+jobs:
+  build_and_test:
+    # Задание будет выполняться на виртуальной машине с Ubuntu последней версии
+    runs-on: ubuntu-latest
+
+    # Последовательность шагов в задании
+    steps:
+    - name: Checkout code # Шаг 1: Клонирование репозитория
+      # Использует стандартное действие GitHub для клонирования кода.
+      # `submodules: true` ОБЯЗАТЕЛЕН, чтобы также склонировать ваш googletest submodule.
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Build and Run Unit Tests # Шаг 2: Сборка и запуск юнит-тестов
+      # Устанавливаем необходимые для сборки C++ инструменты (g++ и cmake)
+      # Затем создаем директорию для сборки, конфигурируем CMake и компилируем.
+      # После успешной компиляции запускаем исполняемый файл тестов.
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential cmake
+        mkdir build_ci_tests
+        cd build_ci_tests
+        cmake ..
+        make
+        ./drogon_api_tests # Запускаем тестовый исполняемый файл. Если тест упадет, этот шаг провалится.
+
+    - name: Build Docker Image # Шаг 3: Сборка Docker образа приложения
+      # Если юнит-тесты прошли успешно, этот шаг соберет Docker образ.
+      # Используется ваш Dockerfile, который, как мы договорились, основан на 'drogonframework/drogon'.
+      # GitHub Actions уже имеет работающий Docker-демон.
+      run: |
+        docker build -t drogon-api-app:latest .
+
+    # Опционально: Шаг для деплоя образа в Docker Registry (например, Docker Hub)
+    # Если вы планируете деплоить ваше приложение в облачный Kubernetes или делать образ доступным
+    # для других сред, вам потребуется Docker Registry. Этот шаг пока закомментирован.
+    # Если вы решите его использовать, вам нужно будет создать SECRET переменные
+    # (DOCKER_USERNAME и DOCKER_TOKEN) в настройках вашего GitHub-репозитория.
+    # - name: Log in to Docker Hub
+    #   uses: docker/login-action@v3
+    #   with:
+    #     username: ${{ secrets.DOCKER_USERNAME }}
+    #     password: ${{ secrets.DOCKER_TOKEN }}
+    # - name: Push Docker Image
+    #   run: docker push your-docker-hub-username/drogon-api-app:latest
