@@ -64,6 +64,12 @@
 
 
 
+
+
+
+
+
+
 # .github/workflows/main.yaml
 
 name: CI/CD для Drogon API App
@@ -78,10 +84,7 @@ on:
 
 jobs:
   build_and_test:
-    # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Используем Docker-образ с Drogon для выполнения шагов
-    # Это позволяет вашему CMakeLists.txt найти Drogon без ручной установки
-    container: drogonframework/drogon:latest # Используем образ с Drogon
-    runs-on: ubuntu-latest # Хост-машина, на которой будет запущен контейнер
+    runs-on: ubuntu-latest # Теперь весь Job выполняется на обычной VM Ubuntu
 
     steps:
     - name: Checkout code # Шаг 1: Клонирование репозитория
@@ -89,26 +92,39 @@ jobs:
       with:
         submodules: true
 
-    - name: Build and Run Unit Tests # Шаг 2: Сборка и запуск юнит-тестов
-      # Теперь, поскольку мы внутри контейнера drogonframework/drogon,
-      # Drogon, g++ и cmake уже установлены.
-      # Мы можем сразу приступать к сборке тестов.
+    - name: Set up C++ build environment with Drogon # Шаг 2: Установка окружения C++ и Drogon
+      # На этом шаге мы установим g++, cmake, а также сам Drogon и его зависимости.
+      # Это позволит `cmake ..` найти Drogon для сборки юнит-тестов.
+      run: |
+        sudo apt update
+        # Устанавливаем git для клонирования Drogon
+        sudo apt install -y git build-essential cmake libssl-dev uuid-dev libjsoncpp-dev libc-ares-dev libsqlite3-dev libz-dev libbrotli-dev
+
+        # Установка самого Drogon из исходников (как мы обсуждали ранее)
+        # Это необходимо, потому что runs-on: ubuntu-latest - это чистая система
+        # и Drogon не предустановлен.
+        cd /tmp
+        git clone --depth 1 https://github.com/drogonframework/drogon.git drogon_src
+        cd drogon_src
+        git submodule update --init --recursive --depth 1
+        mkdir build && cd build
+        cmake ..
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig # Обновляем кэш библиотек
+
+    - name: Build and Run Unit Tests # Шаг 3: Сборка и запуск юнит-тестов
       run: |
         mkdir build_ci_tests
         cd build_ci_tests
-        cmake .. # find_package(Drogon) теперь найдет его
+        cmake .. # Теперь find_package(Drogon) сработает, так как Drogon установлен
         make
         ./drogon_api_tests
 
-    - name: Build Docker Image # Шаг 3: Сборка Docker образа приложения
-      # Для этого шага контейнерное окружение нужно правильно настроить.
-      # Либо используйте 'docker/build-push-action@v5'
-      # Либо можно вынести этот шаг в отдельный Job, который не использует 'container:'
-      # Но самый простой способ - отключить 'container:' для Job и установить Docker
-      # внутри 'runs-on: ubuntu-latest' для всех шагов, что мы и делали ранее.
-      # Давайте пока оставим Job целиком в контейнере.
-      # Запуск docker build внутри контейнера GitHub Actions требует Docker-in-Docker или других настроек.
-      # Чтобы не усложнять, давайте пока сфокусируемся на сборке и тестах.
-      # Если этот шаг снова упадет, мы его скорректируем.
+    - name: Build Docker Image # Шаг 4: Сборка Docker образа приложения
+      # Для этого шага Docker-демон будет доступен на VM Ubuntu.
       run: |
         docker build -t drogon-api-app:latest .
+
+    # Опционально: Push Docker Image to Registry
+    # ...
