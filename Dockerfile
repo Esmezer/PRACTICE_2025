@@ -201,5 +201,6 @@ RUN mkdir -p build && cd build && cmake .. && make
 # Запуск
 CMD ["./build/main"]
 
+
 EXPOSE 8080 
 # Открываем порт для приложения
