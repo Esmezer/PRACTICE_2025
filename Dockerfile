@@ -186,22 +186,20 @@
 
 
 
-    # Используем официальный образ Drogon с CMake и g++
-FROM drogonframework/drogon:latest 
-# Можно уточнить версию, например, drogonframework/drogon:1.9.11
+# Используем официальный образ Drogon с CMake и g++
+FROM drogonframework/drogon:latest
 
-    # Установка рабочей директории
+# Установка рабочей директории
 WORKDIR /app
 
-    # Копируем проект в контейнер (включая папку googletest)
+# Копируем проект в контейнер (включая папку googletest)
 COPY . /app
 
-    # Собираем проект
+# Собираем проект
 RUN mkdir -p build && cd build && cmake .. && make
 
-    # Запуск
+# Запуск
 CMD ["./build/main"]
 
 EXPOSE 8080 
 # Открываем порт для приложения
-
